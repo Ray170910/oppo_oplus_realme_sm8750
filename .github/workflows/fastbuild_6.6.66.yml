@@ -86,16 +86,10 @@ jobs:
     outputs:
       ksuver: ${{ steps.ksu_version.outputs.ksuver }}
     steps:
-      - name: Checkout kernel source
-        uses: actions/checkout@v4
-        with:
-          repository: Ray170910/my_android_kernel_common_oneplus_sm8750
-          ref: oneplus/sm8750_v_15.0.2_oneplus_13_6.6.66
-          path: kernel_workspace/common
-          token: ${{ secrets.PAT_TOKEN }}
-    
       - name: 安装环境依赖+初始化源码仓库及llvm-Clang18工具链
         run: |
+          rm -rf kernel_workspace
+          mkdir kernel_workspace
           cd kernel_workspace
           
           sudo apt-mark hold firefox &&
@@ -120,11 +114,23 @@ jobs:
           
           wait
           echo "所有源码及llvm-Clang18工具链初始化完成！"
+
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          repository: Ray170910/my_android_kernel_common_oneplus_sm8750
+          ref: oneplus/sm8750_v_15.0.2_oneplus_13_6.6.66
+          path: kernel_workspace/common
+          token: ${{ secrets.PAT_TOKEN }}
+      
+      - name: 去除 ABI 保护 & 去除 dirty 后缀
+        run: |
+          cd kernel_workspace
           echo "正在去除 ABI 保护 & 去除 dirty 后缀..."
           rm common/android/abi_gki_protected_exports_* || true
           for f in common/scripts/setlocalversion; do
             sed -i 's/ -dirty//g' "$f"
-            sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' "$f"
+            sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')'  "$f"
           done
 
       - name: 配置ccache目录
