@@ -205,7 +205,7 @@ jobs:
             # 创建版本定义模板&版本格式函数: 使用获取的提交哈希和固定后缀
             # KSU_VERSION_API: API 版本定义
             # KSU_VERSION_FULL: 完整版本定义
-            VERSION_DEFINITIONS=$'define get_ksu_version_full\nv\\$1-'"$GIT_COMMIT_HASH"$'@cctv18\nendef\n\nKSU_VERSION_API := '"$KSU_API_VERSION"$'\nKSU_VERSION_FULL := v'"$KSU_API_VERSION"$'-'"$GIT_COMMIT_HASH"$'@cctv18'
+            VERSION_DEFINITIONS=$'define get_ksu_version_full\nv\\$1-'"$GIT_COMMIT_HASH"$'@Email:admin@kernelsu.cc\nendef\n\nKSU_VERSION_API := '"$KSU_API_VERSION"$'\nKSU_VERSION_FULL := v'"$KSU_API_VERSION"$'-'"$GIT_COMMIT_HASH"$'@Email:admin@kernelsu.cc'
             # 清理内核 Kbuild 中的旧版本定义
             # 删除版本函数
             sed -i '/define get_ksu_version_full/,/endef/d' kernel/Kbuild
@@ -232,7 +232,7 @@ jobs:
             # 验证修改结果
             grep -A10 "REPO_OWNER" kernel/Kbuild  # 检查插入点后的内容
             grep "KSU_VERSION_FULL" kernel/Kbuild # 确认版本定义存在
-            echo "SukiSU版本号: v${KSU_API_VERSION}-${GIT_COMMIT_HASH}@cctv18"
+            echo "SukiSU版本号: v${KSU_API_VERSION}-${GIT_COMMIT_HASH}@Email:admin@kernelsu.cc"
           elif [[ ${{ github.event.inputs.ksu_type }} == "ksunext" ]]; then
             echo "正在配置KernelSU Next..."
             curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
@@ -554,6 +554,28 @@ jobs:
           sed -i 's/hooks.o //g' "./selinux/Makefile"
           cat "./baseband-guard/sepatch.txt" >> "./selinux/Makefile"
 
+      - name: 🎮 Apply GameSense patches
+        run: |
+          echo "正在下载并应用 GameSense 补丁..."
+          cd kernel_workspace/common
+          mkdir -p /tmp/gamesense
+
+          PATCH_FILES=$(curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
+            "https://api.github.com/repos/Ray170910/gamesense-ksu-module/contents/patch" \
+            | jq -r '.[] | select(.name | endswith(".patch")) | .name')
+          for patch_name in $PATCH_FILES; do
+            echo "[GameSense] 下载 $patch_name ..."
+            curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
+              "https://raw.githubusercontent.com/Ray170910/gamesense-ksu-module/main/patch/$patch_name" \
+              -o "/tmp/gamesense/$patch_name"
+            if [ -f "/tmp/gamesense/$patch_name" ]; then
+              echo "[GameSense] 应用 $patch_name ..."
+              patch -p1 < "/tmp/gamesense/$patch_name" || \
+              patch -p1 --fuzz=3 < "/tmp/gamesense/$patch_name" || true
+            fi
+          done
+          
+          echo "✅ GameSense 补丁应用完成"
       - name: 添加制作名称
         run: |
           cd kernel_workspace
