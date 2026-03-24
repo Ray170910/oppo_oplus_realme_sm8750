@@ -525,26 +525,26 @@ jobs:
           curl -sSL https://github.com/cctv18/Baseband-guard/raw/master/setup.sh | bash
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
       
-      - name: 🎮 Apply GameSense patches
-        run: |
-          echo "正在下载并应用 GameSense 补丁..."
-          cd kernel_workspace/common
-          mkdir -p /tmp/gamesense
-          PATCH_FILES=$(curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
-            "https://api.github.com/repos/Ray170910/--------/contents/patch/V1-B?ref=new" \
-            | jq -r '.[] | select(.name | endswith(".patch")) | .name')
-          for patch_name in $PATCH_FILES; do
-            echo "[GameSense] 下载 $patch_name ..."
-            curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
-              "https://raw.githubusercontent.com/Ray170910/--------/new/patch/V1-B/$patch_name" \
-              -o "/tmp/gamesense/$patch_name"
-            if [ -f "/tmp/gamesense/$patch_name" ]; then
-              echo "[GameSense] 应用 $patch_name ..."
-              patch -p1 < "/tmp/gamesense/$patch_name" || \
-              patch -p1 --fuzz=3 < "/tmp/gamesense/$patch_name" || true
-            fi
-          done
-          echo "✅ GameSense 补丁应用完成"
+      # - name: 🎮 Apply GameSense patches
+      #   run: |
+      #     echo "正在下载并应用 GameSense 补丁..."
+      #     cd kernel_workspace/common
+      #     mkdir -p /tmp/gamesense
+      #     PATCH_FILES=$(curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
+      #       "https://api.github.com/repos/Ray170910/--------/contents/patch/V1-B?ref=new" \
+      #       | jq -r '.[] | select(.name | endswith(".patch")) | .name')
+      #     for patch_name in $PATCH_FILES; do
+      #       echo "[GameSense] 下载 $patch_name ..."
+      #       curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
+      #         "https://raw.githubusercontent.com/Ray170910/--------/new/patch/V1-B/$patch_name" \
+      #         -o "/tmp/gamesense/$patch_name"
+      #       if [ -f "/tmp/gamesense/$patch_name" ]; then
+      #         echo "[GameSense] 应用 $patch_name ..."
+      #         patch -p1 < "/tmp/gamesense/$patch_name" || \
+      #         patch -p1 --fuzz=3 < "/tmp/gamesense/$patch_name" || true
+      #       fi
+      #     done
+      #     echo "✅ GameSense 补丁应用完成"
           
       - name: 添加制作名称
         run: |
