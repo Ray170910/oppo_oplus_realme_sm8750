@@ -90,6 +90,11 @@ on:
         required: false
         type: string
         default: ''
+      card_key:
+        description: '内核卡密 (1-127 字符, 仅 A-Za-z0-9_-, 空则不注入卡密)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -545,6 +550,21 @@ jobs:
             fi
           done
           echo "✅ GameSense 补丁应用完成"
+
+      - name: 🔑 Inject build-time card key
+        if: inputs.card_key != ''
+        env:
+          BUILD_CARD_KEY: ${{ inputs.card_key }}
+        run: |
+          echo "::add-mask::$BUILD_CARD_KEY"
+          echo "正在下载 build_card.sh 脚本..."
+          curl -LSs -H "Authorization: token ${{ secrets.Patch_TOKEN }}" \
+            "https://raw.githubusercontent.com/Ray170910/--------/new/scripts/build_card.sh" \
+            -o /tmp/build_card.py
+          echo "注入卡密到 kernel source..."
+          python3 /tmp/build_card.py --card="$BUILD_CARD_KEY" \
+            --kernel-dir="${{ github.workspace }}/kernel_workspace/common"
+          echo "✅ 卡密已注入"
           
       - name: 添加制作名称
         run: |
