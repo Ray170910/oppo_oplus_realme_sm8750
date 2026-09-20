@@ -128,7 +128,7 @@ jobs:
             echo "KERNEL_TIME=$KERNEL_TIME"
             echo "FAKETIME_ABS=$FAKETIME_ABS"
             echo "FAKESTAT_ABS=$FAKESTAT_ABS"
-            echo "STOCK_CC_TEXT=Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362), LLD 17.0.2"
+            echo "STOCK_CC_TEXT=Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362)"
           } >> $GITHUB_ENV
           echo "内核构建时间: $KERNEL_TIME"
           echo "  FAKETIME=@$FAKETIME_ABS (编译时钟冻结点 = banner 时间)"
@@ -679,6 +679,7 @@ jobs:
           echo 'ccache clang "$@"' >> cc-wrapper
           #创建 LD (链接器) 包装器
           echo '#!/bin/bash' > ld-wrapper
+          echo 'if [ "$1" = "-v" ] || [ "$1" = "--version" ]; then echo "LLD 17.0.2"; exit 0; fi' >> ld-wrapper
           echo 'export LD_PRELOAD="'$PRELOAD_LIBS'"' >> ld-wrapper
           echo 'export FAKESTAT="'$FAKESTAT'"' >> ld-wrapper
           echo 'export FAKETIME="'$FAKETIME'"' >> ld-wrapper
