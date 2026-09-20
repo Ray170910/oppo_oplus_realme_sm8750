@@ -662,6 +662,8 @@ jobs:
           wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/lib/libfaketimeMT.so
           chmod 777 ./*.so
           export TZ=UTC
+          export KBUILD_BUILD_USER="build-user"
+          export KBUILD_BUILD_HOST="build-host"  # banner 与官核 boot.img 逐字节一致 (build-user@build-host)
           export FAKESTAT="${FAKESTAT_ABS}"
           export FAKETIME="@${FAKETIME_ABS}"
           echo "FAKESTAT=$FAKESTAT" >> $GITHUB_ENV
