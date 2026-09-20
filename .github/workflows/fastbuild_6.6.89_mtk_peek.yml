@@ -95,6 +95,11 @@ on:
         required: false
         type: string
         default: ''
+      custom_kernel_time:
+        description: '⏰ 自定义内核构建时间 (留空默认官核时间 Wed Jul 29 08:14:47 UTC 2026, 取自本机 boot.img banner)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -106,6 +111,27 @@ jobs:
       actions: write
       contents: read
     steps:
+      - name: ⏰ 解析内核构建时间 (boot.img 官核时间 / 自定义)
+        run: |
+          STOCK_KERNEL_TIME='Wed Jul 29 08:14:47 UTC 2026'
+          if [ -n "${{ github.event.inputs.custom_kernel_time }}" ]; then
+            KERNEL_TIME="${{ github.event.inputs.custom_kernel_time }}"
+          else
+            KERNEL_TIME="$STOCK_KERNEL_TIME"
+          fi
+          # GNU date 解析 banner 时间 → 纪元秒; faketime/fakestat 用 UTC 渲染,
+          # 编译步 export TZ=UTC 后 banner 可字节级复现官核时间串
+          KERNEL_TS=$(date -d "$KERNEL_TIME" +%s)
+          FAKETIME_ABS=$(date -u -d "@$KERNEL_TS" '+%Y-%m-%d %H:%M:%S')
+          FAKESTAT_ABS=$(date -u -d "@$((KERNEL_TS - 3600))" '+%Y-%m-%d %H:%M:%S')
+          {
+            echo "KERNEL_TIME=$KERNEL_TIME"
+            echo "FAKETIME_ABS=$FAKETIME_ABS"
+            echo "FAKESTAT_ABS=$FAKESTAT_ABS"
+          } >> $GITHUB_ENV
+          echo "内核构建时间: $KERNEL_TIME"
+          echo "  FAKETIME=@$FAKETIME_ABS (编译时钟冻结点 = banner 时间)"
+          echo "  FAKESTAT=$FAKESTAT_ABS (文件 mtime 伪造点 = banner -1h)"
       - name: 安装环境依赖+初始化源码仓库及llvm-Clang18工具链
         run: |
           rm -rf kernel_workspace
@@ -635,8 +661,9 @@ jobs:
           wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/lib/libfakestat.so
           wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/lib/libfaketimeMT.so
           chmod 777 ./*.so
-          export FAKESTAT="2025-05-25 12:00:00"
-          export FAKETIME="@2025-05-25 13:00:00"
+          export TZ=UTC
+          export FAKESTAT="${FAKESTAT_ABS}"
+          export FAKETIME="@${FAKETIME_ABS}"
           echo "FAKESTAT=$FAKESTAT" >> $GITHUB_ENV
           echo "FAKETIME=$FAKETIME" >> $GITHUB_ENV
           SO_DIR=$(pwd)
