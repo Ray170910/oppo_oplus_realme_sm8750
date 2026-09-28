@@ -753,11 +753,22 @@ jobs:
           rm -f Image
           mv oImage Image
           
+      - name: 编译防砖工具 abtool (abslot-tool)
+        run: |
+          cd kernel_workspace
+          sudo apt-get install -y -qq gcc-aarch64-linux-gnu >/dev/null 2>&1 || sudo apt-get install -y gcc-aarch64-linux-gnu
+          git clone https://github.com/F-19-F/abslot-tool --depth=1
+          cd abslot-tool
+          aarch64-linux-gnu-gcc -static -O2 -o abtool main.c
+          file abtool
+          ls -l abtool
+          cp abtool ../abtool
+
       - name: 克隆 AnyKernel3 并打包
         id: create_zip
         run: |
           cd kernel_workspace
-          git clone https://github.com/cctv18/AnyKernel3 --depth=1
+          git clone https://github.com/Ray170910/AnyKernel3 --depth=1
           rm -rf ./AnyKernel3/.git
           cd AnyKernel3
           cp ../common/out/arch/arm64/boot/Image ./Image
@@ -765,6 +776,9 @@ jobs:
             echo "未找到内核镜像文件，构建可能出错"
             exit 1
           fi
+          # 防砖工具进包 (tools/ 由 anykernel.sh 的 chmod -R 755 统一赋权;
+          # 自动换槽钩子在 fork 仓库的 anykernel.sh 结尾, 此处不再注入)
+          cp ../abtool ./tools/abtool
           if [[ ${{ github.event.inputs.ksu_type }} == "sukisu" ]]; then
             KSU_TYPENAME="SukiSU"
           elif [[ ${{ github.event.inputs.ksu_type }} == "resukisu" ]]; then
