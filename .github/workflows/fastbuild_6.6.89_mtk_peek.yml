@@ -765,7 +765,10 @@ jobs:
           sudo apt-get install -y -qq gcc-aarch64-linux-gnu >/dev/null 2>&1 || sudo apt-get install -y gcc-aarch64-linux-gnu
           git clone https://github.com/F-19-F/abslot-tool --depth=1
           cd abslot-tool
-          aarch64-linux-gnu-gcc -static -O2 -o abtool main.c
+          # ★-D__ANDROID__: aarch64-linux-gnu-gcc 是普通 Linux 交叉编译器, 不自带
+#   __ANDROID__ 宏 —— 不加的话工具编成 PC 模式, 找当前目录 misc.img 而
+#   不是 /dev/block/by-name/misc (CI 实测 ENOENT, root 下同样失败)。
+aarch64-linux-gnu-gcc -static -O2 -D__ANDROID__ -o abtool main.c
           file abtool
           ls -l abtool
           cp abtool ../abtool
