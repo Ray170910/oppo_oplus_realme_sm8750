@@ -763,7 +763,7 @@ jobs:
         run: |
           cd kernel_workspace
           sudo apt-get install -y -qq gcc-aarch64-linux-gnu >/dev/null 2>&1 || sudo apt-get install -y gcc-aarch64-linux-gnu
-          git clone https://github.com/F-19-F/abslot-tool --depth=1
+          git clone https://github.com/Ray170910/abslot-tool --depth=1
           cd abslot-tool
           # ★-D__ANDROID__: aarch64-linux-gnu-gcc 是普通 Linux 交叉编译器, 不自带
           #   __ANDROID__ 宏 —— 不加的话工具编成 PC 模式, 找当前目录 misc.img 而
