@@ -134,7 +134,7 @@ jobs:
             echo "KERNEL_TIME=$KERNEL_TIME"
             echo "FAKETIME_ABS=$FAKETIME_ABS"
             echo "FAKESTAT_ABS=$FAKESTAT_ABS"
-            echo "STOCK_CC_TEXT=Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362)"
+            echo "STOCK_CC_TEXT=Android (11368308, +pgo, +bolt, +lto, +mlgo, based on r510928) clang version 18.0.0 (https://android.googlesource.com/toolchain/llvm-project 477610d4d0d988e69dbc3fae4f86bff3f07f2b5)"
           } >> $GITHUB_ENV
           echo "内核构建时间: $KERNEL_TIME"
           echo "  FAKETIME=@$FAKETIME_ABS (编译时钟冻结点 = banner 时间)"
@@ -630,6 +630,12 @@ jobs:
         run: |
           cd kernel_workspace
           echo "替换内核版本后缀..."
+          # ★banner/uname 对齐官核 (610 固件 boot.img 实测 banner):
+          #   源码 SUBLEVEL=89, 官核为 6.6.66-android15-8-g29d86c5fc9dd-abogki428889875-4k。
+          #   不改的话 uname/vermagic/vendor 模块目录(/vendor/lib/modules/<uname -r>)
+          #   都会差 6.6.89 vs 6.6.66, 官方 vendor 模块直接找不到。
+          sed -i 's/^SUBLEVEL = 89/SUBLEVEL = 66/' ./common/Makefile
+          grep -E '^(VERSION|PATCHLEVEL|SUBLEVEL)' ./common/Makefile
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
             echo "当前内核版本后缀：${{ github.event.inputs.kernel_suffix }}"
             for f in ./common/scripts/setlocalversion; do
@@ -675,7 +681,7 @@ jobs:
           wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/lib/libfaketimeMT.so
           chmod 777 ./*.so
           export TZ=UTC
-          export KBUILD_BUILD_USER="build-user"
+          export KBUILD_BUILD_USER="kleaf"
           export KBUILD_BUILD_HOST="build-host"  # banner 与官核 boot.img 逐字节一致 (build-user@build-host)
           export FAKESTAT="${FAKESTAT_ABS}"
           export FAKETIME="@${FAKETIME_ABS}"
@@ -691,7 +697,7 @@ jobs:
           echo 'ccache clang "$@"' >> cc-wrapper
           #创建 LD (链接器) 包装器
           echo '#!/bin/bash' > ld-wrapper
-          echo 'if [ "$1" = "-v" ] || [ "$1" = "--version" ]; then echo "LLD 17.0.2"; exit 0; fi' >> ld-wrapper
+          echo 'if [ "$1" = "-v" ] || [ "$1" = "--version" ]; then echo "LLD 18.0.0"; exit 0; fi' >> ld-wrapper
           echo 'export LD_PRELOAD="'$PRELOAD_LIBS'"' >> ld-wrapper
           echo 'export FAKESTAT="'$FAKESTAT'"' >> ld-wrapper
           echo 'export FAKETIME="'$FAKETIME'"' >> ld-wrapper
@@ -721,8 +727,8 @@ jobs:
           sudo rm -rf /usr/local/lib/android &
           sudo rm -rf /opt/ghc &
           sudo rm -rf /opt/hostedtoolcache/CodeQL &
-          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" LD="ld.lld" HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME" KBUILD_BUILD_USER="build-user" KBUILD_BUILD_HOST="build-host" KBUILD_BUILD_NUMBER="1" CC_VERSION_TEXT="$STOCK_CC_TEXT"
-          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="$(pwd)/cc-wrapper" LD="$(pwd)/ld-wrapper" HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME" KBUILD_BUILD_USER="build-user" KBUILD_BUILD_HOST="build-host" KBUILD_BUILD_NUMBER="1" CC_VERSION_TEXT="$STOCK_CC_TEXT"
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" LD="ld.lld" HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME" KBUILD_BUILD_USER="kleaf" KBUILD_BUILD_HOST="build-host" KBUILD_BUILD_NUMBER="1" CC_VERSION_TEXT="$STOCK_CC_TEXT"
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="$(pwd)/cc-wrapper" LD="$(pwd)/ld-wrapper" HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME" KBUILD_BUILD_USER="kleaf" KBUILD_BUILD_HOST="build-host" KBUILD_BUILD_NUMBER="1" CC_VERSION_TEXT="$STOCK_CC_TEXT"
           
           # 编译后时间劫持二次校验
           echo "--- 编译后环境时间: $(LD_PRELOAD=$PRELOAD_LIBS date) ---"
