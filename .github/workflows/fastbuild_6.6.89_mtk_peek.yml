@@ -104,7 +104,7 @@ on:
         description: '调试接口(直通读+跳过哈希)。仅调试用, 日用设备请关闭'
         required: true
         type: boolean
-        default: 'true'
+        default: 'false'
 
 jobs:
   build:
@@ -577,7 +577,7 @@ jobs:
         run: |
           set -euo pipefail
           REPO="Ray170910/--------"
-          REF="peek"
+          REF="new"
           KD="${GITHUB_WORKSPACE}/kernel_workspace/common"
           TMP=/tmp/peekgs
           mkdir -p "$TMP"
@@ -591,7 +591,7 @@ jobs:
           cd "$KD"
           echo "::group::[peek] 应用内核补丁"
           curl -fLSs -H "Authorization: token ${PATCH_TOKEN}" \
-            "https://api.github.com/repos/${REPO}/contents/patch/6.6?ref=${REF}" \
+            "https://api.github.com/repos/${REPO}/contents/patch/Ace5Ultra-6.6?ref=${REF}" \
             | jq -r '.[] | select(.name | endswith(".patch")) | .name' | sort > "$TMP/list"
           COUNT=$(wc -l < "$TMP/list")
           echo "[peek] 清单 $COUNT 个补丁"
@@ -600,7 +600,7 @@ jobs:
             exit 1
           fi
           while read -r p; do
-            fetch "patch/6.6/$p" "$TMP/$p"
+            fetch "patch/Ace5Ultra-6.6/$p" "$TMP/$p"
             head -1 "$TMP/$p" | grep -q '^diff --git ' || {
               echo "::error::$p 下载内容不是补丁 (首行: $(head -c 120 "$TMP/$p"))"; exit 1; }
             if ! patch -p1 --batch --fuzz=0 --dry-run -s -i "$TMP/$p"; then
@@ -614,7 +614,7 @@ jobs:
           echo "[peek] $COUNT 个补丁全部应用成功"
           echo "::endgroup::"
           echo "::group::[peek] 重随机混淆字符串"
-          fetch "scripts/gen_obfstr.py" /tmp/gen_obfstr.py
+          fetch "scripts/gen_obfstr_peek.py" /tmp/gen_obfstr.py
           python3 /tmp/gen_obfstr.py --kernel-dir="$KD"
           python3 /tmp/gen_obfstr.py --kernel-dir="$KD" --check
           echo "::endgroup::"
