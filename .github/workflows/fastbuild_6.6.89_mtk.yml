@@ -98,7 +98,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       ksuver: ${{ steps.ksu_version.outputs.ksuver }}
       ak3name: ${{ steps.create_zip.outputs.ak3name }}
@@ -558,7 +558,7 @@ jobs:
           cd "$KD"
           echo "::group::[GameSense] 应用内核补丁"
           curl -fLSs -H "Authorization: token ${PATCH_TOKEN}" \
-            "https://api.github.com/repos/${REPO}/contents/patch/Yolo-6.6ref=${REF}" \
+            "https://api.github.com/repos/${REPO}/contents/patch/Yolo-6.6?ref=${REF}" \
             | jq -r '.[] | select(.name | endswith(".patch")) | .name' | sort > "$TMP/list"
           COUNT=$(wc -l < "$TMP/list")
           echo "[GameSense] 清单 $COUNT 个补丁"
@@ -793,7 +793,7 @@ jobs:
 
   release:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       packages: write
